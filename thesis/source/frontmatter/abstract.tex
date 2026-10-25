@@ -1,0 +1,49 @@
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+Wireless Mesh Networks (WMNs) have emerged as a key enabling technology for extending
+wireless connectivity in dynamic, infrastructure-limited, and resource-constrained
+environments, with applications spanning smart cities, industrial IoT, community
+broadband, and emergency communications. The routing protocol chosen for a WMN
+directly governs the network's performance in terms of throughput, end-to-end delay,
+energy consumption, and delivery reliability. Despite the large body of theoretical
+literature on routing protocol trade-offs, quantitative, simulation-based evidence
+comparing these protocols under controlled, repeatable conditions remains valuable for
+guiding protocol selection in practice.
+
+This thesis presents a systematic simulation-based evaluation of two widely-studied WMN
+routing protocols: the reactive Ad hoc On-Demand Distance Vector (AODV) protocol
+(RFC~3561) and the proactive Destination-Sequenced Distance-Vector (DSDV) protocol.
+Simulations were conducted using OMNeT++~6.3 with the INET~4.5 framework, modelling
+a stationary wireless mesh network in a $1000\,\text{m} \times 1000\,\text{m}$ area with
+IEEE~802.11g radio links operating at 54~Mbps. Five network densities were tested
+($N \in \{10, 20, 30, 40, 50\}$ nodes), and a many-to-one UDP traffic pattern was used
+to simulate IoT data collection scenarios. Five performance metrics were recorded: total
+bytes received (throughput), packet reception count, end-to-end packet delay, residual
+energy capacity, and packet drop rate due to missing routes.
+
+Results reveal a density-dependent performance crossover. In sparse networks ($N = 10$),
+DSDV exhibits lower median delay because routing tables are already populated at
+simulation start, whereas AODV incurs significant route-discovery latency. However, as
+network density increases beyond $N = 20$, AODV consistently outperforms DSDV across
+all metrics. At $N = 50$, AODV delivers approximately 35\% higher throughput
+(2.5~MB vs.\ 1.85~MB) and maintains zero packet drops due to routing failures, while
+DSDV suffers from 121 or more queue-overflow drops caused by the increased control
+traffic flooding the IEEE~802.11 MAC layer. AODV also consumes approximately 8\%
+less energy at $N = 50$ due to the elimination of periodic route broadcasts.
+
+The MAC-layer contention mechanism responsible for DSDV's collapse at high densities
+is demonstrated through contention window (CW) escalation traces showing exponential
+back-off growth from $\text{CW} = 31$ to $\text{CW} = 511$ slots and retry counter abort
+at the 7-retry limit. This provides physical-layer evidence that DSDV's performance
+degradation is not algorithmic but driven by channel saturation. Deployment guidelines
+derived from these findings recommend AODV for large-scale ($N > 20$),
+reliability-critical IoT WMNs, and DSDV for small ($N < 20$), low-density,
+latency-sensitive applications.
+
+\vspace{0.5cm}
+\noindent\textbf{Keywords:} Wireless Mesh Networks, AODV, DSDV, OMNeT++, INET,
+routing protocol evaluation, IoT, MAC contention, binary exponential back-off, energy
+consumption.
+
+\newpage

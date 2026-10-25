@@ -1,0 +1,116 @@
+\chapter{Simulation Configuration Files}
+\label{app:config}
+
+\section{Complete \texttt{omnetpp.ini}}
+\label{app:omnetpp_ini}
+
+The complete \texttt{omnetpp.ini} configuration file used in all simulations is listed
+below. Comments explain the purpose of each parameter group.
+
+\begin{lstlisting}[caption={Complete \texttt{omnetpp.ini} simulation configuration.},
+                   label={lst:omnetpp_ini}]
+[General]
+network = inet.examples.thesis_wmn.MeshNetwork
+sim-time-limit = 50s
+record-eventlog = false
+
+# 1. DISABLE STATIC ROUTES (force AODV/DSDV to handle routing)
+*.configurator.addStaticRoutes = false
+
+# 2. NODE COUNT SWEEP
+*.numNodes = ${N=10,20,30,40,50}
+
+# 3. MOBILITY: Stationary (MassMobility with speed=0)
+# Using MassMobility instead of StationaryMobility to avoid
+# a macOS Qtenv crash in OMNeT++ 6.3 on Apple Silicon.
+**.mobility.bounds = "1000m 1000m 0m"
+**.mobility.typename        = "MassMobility"
+**.mobility.initialX        = uniform(0m, 1000m)
+**.mobility.initialY        = uniform(0m, 1000m)
+**.mobility.initialZ        = 0m
+**.mobility.speed           = 0mps
+**.mobility.changeInterval  = 1s
+**.mobility.angleDelta      = 0deg
+**.mobility.initFromDisplayString = false
+
+# Show radio range circles in the Qtenv GUI
+**.wlan[*].radio.displayCommunicationRange = true
+
+# 4. IEEE 802.11g RADIO MEDIUM
+**.radioMedium.typename = "Ieee80211ScalarRadioMedium"
+**.radioMedium.backgroundNoise.power = -90dBm
+**.wlan[*].typename       = "Ieee80211Interface"
+**.wlan[*].radio.typename = "Ieee80211ScalarRadio"
+**.wlan[*].mac.typename   = "Ieee80211Mac"
+**.wlan[*].mac.opMode     = "g(mixed)"
+**.wlan[*].mac.bitrate    = 54Mbps
+**.wlan[*].radio.transmitter.communicationRange = 100m
+
+# 5. ENERGY MODEL
+**.energyStorage.typename                           = "IdealEpEnergyStorage"
+**.energyStorage.initialCapacity                    = 100J
+**.wlan[*].radio.energyConsumer.typename            = "StateBasedEpEnergyConsumer"
+**.wlan[*].radio.energyConsumer.transmitterPowerConsumption = 1.65W
+**.wlan[*].radio.energyConsumer.receiverPowerConsumption    = 1.4W
+**.wlan[*].radio.energyConsumer.sleepPowerConsumption       = 0.1W
+
+# 6. TRAFFIC: Many-to-one UDP (all nodes -> host[0])
+**.host[*].numApps = 1
+
+# All nodes send to the sink
+**.host[*].app[0].typename       = "UdpBasicApp"
+**.host[*].app[0].destAddresses  = "host[0]"
+**.host[*].app[0].destPort       = 5000
+**.host[*].app[0].messageLength  = 1000B
+**.host[*].app[0].sendInterval   = uniform(0.5s, 1s)
+**.host[*].app[0].startTime      = uniform(1s, 5s)
+**.host[*].app[0].stopTime       = 49s
+
+# Sink receives on port 5000
+**.host[0].app[0].typename   = "UdpSink"
+**.host[0].app[0].localPort  = 5000
+
+# Enable end-to-end delay recording at the sink
+**.host*.app[0].endToEndDelay.result-recording-modes = +mean
+**.host*.app[0].endToEndDelay.scalar-recording = true
+
+# --- PROTOCOL CONFIGURATIONS ---
+
+[Config AODV_Test]
+description = "Simulate Reactive AODV (RFC 3561)"
+**.routingApp.typename = "Aodv"
+
+[Config DSDV_Test]
+description = "Simulate Proactive DSDV (Perkins & Bhagwat 1994)"
+**.routing.typename = "Dsdv"
+\end{lstlisting}
+
+\section{Complete \texttt{MeshNetwork.ned}}
+\label{app:ned}
+
+\begin{lstlisting}[caption={\texttt{MeshNetwork.ned} --- network definition file.},
+                   label={lst:ned}]
+package inet.examples.thesis_wmn;
+
+import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
+import inet.node.inet.ManetRouter;
+import inet.physicallayer.wireless.common.medium.RadioMedium;
+
+network MeshNetwork
+{
+    parameters:
+        int numNodes;
+        @display("bgb=1000,1000"); // 1000m x 1000m deployment area
+
+    submodules:
+        configurator: Ipv4NetworkConfigurator {
+            @display("p=100,100");
+        }
+        radioMedium: RadioMedium {
+            @display("p=100,200");
+        }
+        host[numNodes]: ManetRouter {
+            @display("p=500,500");
+        }
+}
+\end{lstlisting}

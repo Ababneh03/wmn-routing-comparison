@@ -1,0 +1,16 @@
+{
+  "checked_on": "2026-10-25",
+  "public_pdf_pages": 61,
+  "public_source_files": 28,
+  "chapters_retained": 6,
+  "research_figures_retained": 12,
+  "source_compilation": "Succeeded with desktop compiler",
+  "administrative_pages_removed": 2,
+  "student_identifier_scan": "clear",
+  "private_overleaf_link_scan": "clear",
+  "pdf_annotations_retained": 0,
+  "embedded_attachments": 0,
+  "research_chapter_appendix_and_figure_bytes": "match supplied export",
+  "pdf_sha256": "e01be453aaecbfcd7b79ac9323c616a3c66ae9554ef8f563c9669af063b24cca",
+  "source_zip_sha256": "692062ab5824d45847e1cc5ab2b5cb33673c14d33922f45c98e10862fde59d59"
+}

@@ -1,0 +1,165 @@
+\chapter{Wireless Mesh Networks: Background and Architecture}
+\label{ch:wmn}
+
+\section{Definition and Characteristics}
+
+A Wireless Mesh Network (WMN) is a communication network built from radio nodes
+organised in a mesh topology, where every node is capable of relaying data on behalf of
+its neighbours~\cite{akyildiz2005wmn}. Unlike traditional single-hop wireless networks
+in which every client communicates through a central access point, WMN nodes forward
+traffic for one another over multiple wireless hops, making the network self-organising
+and self-healing.
+
+The distinguishing characteristics of WMNs are:
+
+\begin{description}
+  \item[Multi-hop communication.] Packets may traverse several intermediate relay nodes
+    to reach their destination, extending the effective coverage area far beyond the range
+    of any single radio transmitter.
+  \item[Self-organisation.] Nodes discover their neighbours and compute routes
+    automatically, without manual configuration. New nodes joining the network are
+    incorporated with minimal disruption.
+  \item[Self-healing.] When a link or node fails, the network re-routes traffic around
+    the failure. This property is provided by the routing protocol and is one of the
+    primary motivations for using WMNs in critical-infrastructure applications.
+  \item[Partial infrastructure independence.] A WMN can operate without any
+    pre-existing wired infrastructure, though in practice one or more gateway nodes
+    connect the mesh to the Internet or a backbone network.
+  \item[Scalability tension.] While multi-hop forwarding extends coverage, larger networks
+    require more complex routing, more control traffic, and more relay hops that add delay
+    and consume energy. Managing this tension is the central challenge in WMN design.
+\end{description}
+
+\section{Network Architecture}
+
+WMNs are typically classified into three architectural categories~\cite{akyildiz2005wmn,
+bruno2005mesh}:
+
+\subsection{Infrastructure Mesh}
+
+In an infrastructure WMN, a set of dedicated mesh routers forms a backbone. These
+routers are typically mains-powered, have directional antennas, and run advanced
+multi-radio, multi-channel configurations to maximise backbone throughput. Client devices
+(laptops, smartphones, sensors) connect to the backbone through the nearest mesh router.
+This architecture is used in large-scale community broadband networks and enterprise
+campus networks.
+
+\subsection{Client Mesh}
+
+In a client WMN, the client devices themselves participate in routing. There are no
+dedicated routers; every node both generates data and forwards traffic for its peers.
+This architecture suits ad~hoc deployments such as disaster-relief communications and
+vehicular networks (VANETs). The main challenges are device heterogeneity and energy
+constraints, since the routing burden falls on battery-powered client devices.
+
+\subsection{Hybrid Mesh}
+
+A hybrid WMN combines dedicated mesh routers with mesh-capable client devices. Clients
+can communicate directly with each other and with nearby mesh routers, while the routers
+provide backbone connectivity and Internet access. This is the most common commercial
+deployment model and the architecture implicitly modelled in this thesis, where all nodes
+are \texttt{ManetRouter} instances capable of both application traffic and routing.
+
+\section{Key Performance Metrics}
+
+Evaluating a WMN routing protocol requires measuring multiple, sometimes conflicting,
+performance dimensions:
+
+\subsection{Throughput}
+
+Throughput is the rate at which useful application data is delivered to the destination,
+typically measured in bytes per second or as a total byte count over the simulation period.
+High routing overhead reduces throughput by consuming channel capacity with control messages.
+
+\subsection{End-to-End Delay}
+
+End-to-end delay is the time elapsed between a packet being generated at the source and
+being received at the destination. It includes: queuing delay (waiting for the MAC layer),
+transmission delay (radio transmission time), propagation delay (signal travel time), and
+routing delay (route discovery time for reactive protocols). In IoT applications, delay
+requirements vary widely: industrial control requires sub-millisecond response times, while
+environmental monitoring can tolerate delays of several seconds.
+
+\subsection{Packet Delivery Ratio (PDR)}
+
+The PDR is the fraction of transmitted packets that are successfully received at the
+destination. Drops occur due to missing routes (for reactive protocols during route
+discovery, or for proactive protocols during convergence after a topology change), buffer
+overflow, or MAC-layer transmission failure after exhausting all retransmission attempts.
+
+\subsection{Energy Consumption}
+
+Energy consumption is a critical metric in IoT applications where nodes are
+battery-powered. Routing protocols that generate high volumes of control traffic cause
+radios to spend more time in the transmit and receive states, which are the most
+energy-intensive radio states.
+
+\subsection{Routing Overhead}
+
+Routing overhead is the ratio of control bytes to total bytes transmitted. A high routing
+overhead indicates that a large fraction of channel capacity is consumed by protocol
+maintenance rather than application data.
+
+\section{Applications of Wireless Mesh Networks}
+
+WMNs have been deployed across a wide range of application domains:
+
+\paragraph{Community and municipal broadband.}
+Cities in Europe, Asia, and North America have deployed WMNs to provide low-cost
+Internet access in public spaces and underserved areas. Notable examples include the
+Madrid city-wide WMN and municipal deployments in rural Bangladesh.
+
+\paragraph{Industrial IoT and smart manufacturing.}
+Factories use WMNs to connect sensors, actuators, and programmable logic controllers
+(PLCs) without the cost and rigidity of wired Ethernet. The self-healing property is
+particularly valuable in environments where equipment is rearranged frequently.
+
+\paragraph{Smart grid and utility monitoring.}
+Electric utilities deploy WMNs to connect smart meters, substation monitoring equipment,
+and demand-response control systems. Many-to-one traffic patterns --- all meters reporting
+to a central collector --- are characteristic of this use case, and are the pattern
+modelled in this thesis.
+
+\paragraph{Disaster relief and emergency communications.}
+When earthquake or flood damage destroys fixed infrastructure, first responders can deploy
+portable WMN nodes in minutes to restore communications. The infrastructure-free nature
+of client-mesh architectures is essential in these scenarios.
+
+\paragraph{Vehicular Networks (VANETs).}
+Vehicles equipped with IEEE~802.11p (DSRC) or cellular-V2X radios form mobile mesh
+networks to exchange safety messages, traffic information, and infotainment content.
+VANETs present extreme mobility challenges for routing protocols.
+
+\paragraph{Agricultural and environmental monitoring.}
+WMNs connect soil moisture sensors, weather stations, and irrigation controllers across
+large fields, enabling precision agriculture without expensive cabling.
+
+\section{Challenges in WMN Routing}
+
+Routing in WMNs is significantly more challenging than routing in wired networks for
+several reasons:
+
+\paragraph{Shared wireless medium.}
+All nodes within radio range compete for the same channel. The IEEE~802.11 CSMA/CA
+protocol manages this contention, but at the cost of latency and reduced throughput as
+the number of competing nodes increases.
+
+\paragraph{Hidden terminal problem.}
+Node A can hear node B, and node C can hear node B, but A cannot hear C. If A and C
+transmit simultaneously, they collide at B. The IEEE~802.11 RTS/CTS mechanism
+mitigates but does not eliminate this problem.
+
+\paragraph{Many-to-one funnelling.}
+In IoT data-collection scenarios, all nodes transmit to a single gateway or sink. Traffic
+density increases near the sink (the hot-spot effect), creating severe MAC-layer
+congestion in the nodes closest to the sink that must relay traffic from many sources.
+
+\paragraph{Routing loop and stale-route problems.}
+Distance-vector protocols are susceptible to routing loops and can maintain stale routes
+that point to nodes that have moved or become unreachable. DSDV's sequence numbers
+partially address this, but convergence is not instantaneous.
+
+\paragraph{Energy heterogeneity.}
+In mixed deployments, some nodes are mains-powered and others are battery-powered.
+A protocol that maximises network throughput may exhaust battery-powered nodes first,
+partitioning the network.

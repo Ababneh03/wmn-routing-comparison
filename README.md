@@ -4,6 +4,15 @@ An OMNeT++/INET simulation project exploring routing behavior as a stationary wi
 
 This repository packages Abdullah Ababneh's recovered graduation-project configuration, a command-line runner, result analysis, and a newly generated reference dataset. It is associated with the research publication **Comparative Scalability Analysis of AODV and DSDV Routing in Dense Wireless Mesh Networks**.
 
+## Reports and thesis
+
+- **[Read the original thesis — public PDF](thesis/Thesis.pdf)**
+- **[Editable Overleaf/LaTeX source](thesis/source)** · **[Download the public source ZIP](thesis/Overleaf-source.zip)**
+- **[New project report and execution check](docs/PROJECT_REPORT.md)**
+- [All documentation](docs) · [Thesis edition notes](thesis/README.md)
+
+The thesis is a historical research document. Its public edition omits administrative pages and the student identifier. The later project report and methodology audit describe the recovered baseline separately; their findings should not be confused with validation of every thesis conclusion.
+
 ![Baseline application measurements](figures/baseline-comparison.png)
 
 ## What is included
@@ -93,6 +102,7 @@ simulations/        Network definition and original configuration
 scripts/            Run, summarize, plot, and check reference data
 results/reference/  Compact verified baseline summary
 figures/            Generated comparison figures
+thesis/             Public thesis PDF, editable source, and source ZIP
 docs/               Setup, validation, methodology, and GitHub guide
 .github/workflows/  Checks that do not require the simulator
 requirements.txt    Python plotting dependency

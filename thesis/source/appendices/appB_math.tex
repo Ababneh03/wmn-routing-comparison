@@ -1,0 +1,90 @@
+\chapter{Mathematical Background}
+\label{app:math}
+
+\section{Bianchi's IEEE~802.11 Saturation Throughput Model}
+
+Bianchi~\cite{bianchi2000} derived a closed-form expression for the saturation
+throughput of IEEE~802.11 DCF. The model assumes:
+
+\begin{itemize}
+  \item $n$ nodes, each always having a packet to transmit (saturated conditions).
+  \item Transmission probability $\tau$ per slot, derived from the steady-state analysis
+    of the back-off Markov chain.
+  \item No hidden terminals; all nodes within mutual range.
+\end{itemize}
+
+The key equations are:
+
+\begin{equation}
+  \tau = \frac{2(1 - 2p)}{(1 - 2p)(W + 1) + pW\!\left(1 - (2p)^m\right)}
+  \label{eq:tau}
+\end{equation}
+
+where $p$ is the conditional collision probability, $W = \text{CW}_{\min}$, and $m$ is
+the maximum back-off stage such that $2^m W = \text{CW}_{\max}$.
+
+The collision probability is:
+
+\begin{equation}
+  p = 1 - (1 - \tau)^{n-1}
+  \label{eq:collision_prob}
+\end{equation}
+
+These equations form a system that can be solved iteratively for $\tau$ and $p$. The
+saturation throughput $S$ is then:
+
+\begin{equation}
+  S = \frac{P_s \cdot P_{tr} \cdot E[L]}
+         {(1 - P_{tr})\sigma + P_{tr}P_s T_s + P_{tr}(1-P_s)T_c}
+  \label{eq:saturation}
+\end{equation}
+
+where:
+\begin{align}
+  P_{tr} &= 1 - (1-\tau)^n & &\text{(probability at least one node transmits)} \\
+  P_s    &= \frac{n\tau(1-\tau)^{n-1}}{P_{tr}} & &\text{(prob.\ of successful transmission)} \\
+  T_s    &= \text{DIFS} + T_{\text{frame}} + \text{SIFS} + T_{\text{ACK}} & &\text{(successful slot time)} \\
+  T_c    &= \text{DIFS} + T_{\text{frame}} & &\text{(collision slot time)}
+\end{align}
+
+For 802.11g at 54~Mbps with 1000~B payload, $T_{\text{frame}} \approx 200\,\mu\text{s}$.
+As $n$ increases from 10 to 50, $P_s$ decreases and $T_c$ events become more frequent,
+causing $S$ to decrease from near-maximum to well below 50\% of the theoretical channel
+capacity. This is the mechanism that explains why DSDV's additional control-frame
+traffic causes disproportionate throughput degradation at $N = 50$.
+
+\section{Retry-Limit Frame Drop Probability}
+
+When the channel is saturated and the collision probability $p$ is high, the probability
+that a frame survives all $m_r$ retry attempts without an abort is:
+
+\begin{equation}
+  P_{\text{delivery}} = (1 - p)^{m_r + 1} = (1-p)^8 \qquad (m_r = 7)
+  \label{eq:drop_prob}
+\end{equation}
+
+Table~\ref{tab:drop_prob} shows how frame-drop probability varies with collision
+probability:
+
+\begin{table}[ht]
+\centering
+\caption{Frame-drop probability vs.\ collision probability ($m_r = 7$ retries).}
+\label{tab:drop_prob}
+\begin{tabular}{@{}ccc@{}}
+\toprule
+\textbf{Collision probability $p$} & \textbf{Delivery probability} & \textbf{Drop rate} \\
+\midrule
+0.01 & 0.923 & 7.7\% \\
+0.05 & 0.663 & 33.7\% \\
+0.10 & 0.430 & 57.0\% \\
+0.20 & 0.168 & 83.2\% \\
+0.30 & 0.058 & 94.2\% \\
+0.50 & 0.004 & 99.6\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This table demonstrates that even a modest increase in collision probability --- from 5\%
+to 10\% --- nearly doubles the drop rate. DSDV's routing broadcasts, by increasing the
+effective number of competing nodes, can push the network from the 5\% to the 10--20\%
+collision-probability regime, causing the catastrophic drop rates observed at $N = 50$.

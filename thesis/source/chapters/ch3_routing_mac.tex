@@ -1,0 +1,361 @@
+\chapter{Routing Protocols and MAC Layer Theory}
+\label{ch:routing}
+
+\section{Classification of Routing Protocols}
+
+Routing protocols for ad~hoc and mesh networks are broadly classified into three
+categories based on when and how they compute routes~\cite{abolhasan2004review}:
+
+\subsection{Proactive (Table-Driven) Protocols}
+
+Proactive protocols maintain a continuously updated routing table that contains entries
+for all reachable destinations in the network. Whenever a topology change is detected
+--- a link failure, a new node joining, or a metric update --- the protocol propagates
+update messages throughout the network to synchronise all routing tables.
+
+\textbf{Advantages:}
+\begin{itemize}
+  \item Routes are immediately available when a transmission session begins; no discovery delay.
+  \item Predictable and bounded latency, since the routing layer never needs to wait for route discovery.
+  \item Simple implementation: standard distance-vector or link-state algorithms adapted for wireless media.
+\end{itemize}
+
+\textbf{Disadvantages:}
+\begin{itemize}
+  \item High control overhead, especially in dense networks where many nodes exchange routing updates periodically.
+  \item Routing table entries for destinations that are never communicated with consume memory and channel capacity unnecessarily.
+  \item Convergence delay after topology changes can leave stale routes in the table, potentially causing black-hole or routing-loop problems.
+\end{itemize}
+
+Examples of proactive protocols include DSDV~\cite{perkins1994dsdv}, OLSR~\cite{clausen2003olsr}, and BATMAN.
+
+\subsection{Reactive (On-Demand) Protocols}
+
+Reactive protocols do not maintain routing tables for all destinations. Instead, they
+initiate a route discovery procedure --- typically by flooding a Route Request (RREQ)
+message throughout the network --- only when a node needs to communicate with a
+destination for which it has no valid route. A Route Reply (RREP) is sent back from
+the destination to the source along the reverse path, establishing the route. The route
+is cached and used for subsequent packets to the same destination until it expires or a
+link failure is detected.
+
+\textbf{Advantages:}
+\begin{itemize}
+  \item Low steady-state control overhead; no periodic broadcasts when the network is idle.
+  \item Scales to larger networks because routing state is built on demand.
+  \item Energy-efficient: radios spend more time in the receive or sleep state rather than transmitting periodic updates.
+\end{itemize}
+
+\textbf{Disadvantages:}
+\begin{itemize}
+  \item Route discovery latency on first contact with a destination, which can be significant in sparse networks where the RREQ must traverse many hops.
+  \item RREQ flooding can cause a broadcast storm in dense networks if not carefully controlled.
+  \item Maintaining routes for long-lived sessions requires periodic HELLO messages, adding some overhead.
+\end{itemize}
+
+Examples of reactive protocols include AODV~\cite{perkins2003aodv}, DSR~\cite{johnson2007dsr}, and DYMO.
+
+\subsection{Hybrid Protocols}
+
+Hybrid protocols combine proactive and reactive mechanisms. They maintain routing tables
+proactively within a local zone of a configurable radius, and use reactive flooding for
+destinations outside the zone. The Zone Routing Protocol (ZRP) and HWMP (the protocol
+mandated by IEEE~802.11s for standardised mesh networking) are prominent examples.
+
+Hybrid protocols aim to capture the low-latency benefit of proactive routing for nearby
+nodes while limiting overhead by restricting proactive maintenance to the local
+neighbourhood. However, the zone radius must be tuned carefully to achieve the desired
+trade-off, introducing an additional configuration parameter.
+
+Table~\ref{tab:protocol_classes} summarises the key characteristics of the three protocol
+classes.
+
+\begin{table}[ht]
+\centering
+\caption{Comparison of routing protocol classes for WMNs.}
+\label{tab:protocol_classes}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Property} & \textbf{Proactive} & \textbf{Reactive} & \textbf{Hybrid} \\
+\midrule
+Route availability    & Always available & Discovery delay   & Zone: immediate; outside: delayed \\
+Control overhead      & High (periodic)  & Low (on-demand)   & Medium \\
+Memory usage          & High (full table)& Low (active only) & Medium \\
+Scalability           & Poor in dense    & Better            & Good with tuning \\
+Delay predictability  & High             & Low (first packet)& Medium \\
+Energy efficiency     & Lower            & Higher            & Medium \\
+Best for              & Small, latency-critical & Large, infrequent traffic & Large, mixed traffic \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{DSDV: Destination-Sequenced Distance Vector}
+
+\subsection{Overview and History}
+
+DSDV was proposed by Perkins and Bhagwat in 1994~\cite{perkins1994dsdv} as an
+adaptation of the classic Bellman-Ford distance-vector algorithm for mobile ad~hoc
+networks. The key innovation was the introduction of sequence numbers associated with
+each route entry: every destination maintains a monotonically increasing sequence number,
+and route updates bearing higher sequence numbers supersede older entries. This prevents
+the \emph{counting to infinity} problem that plagues standard Bellman-Ford in dynamic
+topologies.
+
+\subsection{Routing Table Structure}
+
+Every DSDV node maintains a routing table with one entry per known destination. Each
+entry contains:
+
+\begin{itemize}
+  \item \textbf{Destination address:} the IP or MAC address of the destination node.
+  \item \textbf{Next hop:} the address of the neighbouring node to which packets should be forwarded.
+  \item \textbf{Metric:} typically the hop count to the destination, though other metrics (delay, ETX) can be used.
+  \item \textbf{Sequence number:} an even number assigned by the destination when it
+    initiates an update, or an odd number assigned by an intermediate node to mark a
+    broken route. Higher is more recent; odd numbers signal link failure.
+  \item \textbf{Install time:} the time at which the entry was last updated, used to expire stale routes.
+\end{itemize}
+
+\subsection{Update Mechanism}
+
+DSDV uses two types of update messages:
+
+\paragraph{Full dump.}
+A complete routing table broadcast, sent periodically (typically every 30--60~seconds)
+or when the routing table changes substantially. Full dumps allow newly joining nodes to
+acquire the complete network topology quickly.
+
+\paragraph{Incremental update.}
+A partial table broadcast containing only the entries that have changed since the last
+full dump. Incremental updates are sent more frequently (typically every 15~seconds) to
+propagate link-state changes rapidly. Their smaller size reduces channel load between
+full dumps.
+
+Upon receiving an update, a node accepts a new entry if:
+\begin{enumerate}
+  \item The incoming sequence number is greater than the stored one (newer information), regardless of metric; or
+  \item The incoming sequence number equals the stored one and the incoming metric is better.
+\end{enumerate}
+
+\subsection{Convergence and Stale Routes}
+
+After a link failure, the node that detects the break immediately invalidates all routes
+through that link (setting their sequence numbers to odd values indicating breakage) and
+broadcasts an update. However, other nodes in the network may continue to use the broken
+route for up to one full update cycle before receiving the invalidation. During this
+convergence window, packets can be sent into a black hole.
+
+In the INET~4.5 implementation used in this thesis, DSDV parameters are set to their
+default values (full dump interval 30~s, incremental update interval 1~s). At $N = 10$
+and a $1000\,\text{m} \times 1000\,\text{m}$ area, many source-destination pairs involve
+multiple hops, and the convergence lag is long enough to cause significant packet drops,
+as demonstrated in Section~\ref{sec:drop_analysis}.
+
+\subsection{DSDV Algorithm Summary}
+
+\begin{algorithm}[ht]
+\caption{DSDV Route Update Processing}
+\begin{algorithmic}[1]
+\For{each entry $e$ in received update message}
+  \If{$e.\text{seqNum} > \text{table}[e.\text{dest}].\text{seqNum}$}
+    \State Accept: update table entry with new next-hop, metric, seqNum
+  \ElsIf{$e.\text{seqNum} = \text{table}[e.\text{dest}].\text{seqNum}$}
+    \If{$e.\text{metric} < \text{table}[e.\text{dest}].\text{metric}$}
+      \State Accept: update table entry with better metric
+    \Else
+      \State Reject: same sequence, worse or equal metric
+    \EndIf
+  \Else
+    \State Reject: older information (lower sequence number)
+  \EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\section{AODV: Ad hoc On-Demand Distance Vector}
+
+\subsection{Overview and Standardisation}
+
+AODV was developed by Perkins, Belding-Royer, and Das~\cite{perkins2003aodv} and was
+published as IETF RFC~3561 in July~2003. It extends DSDV's sequence-number mechanism
+to a reactive framework, maintaining only the routes that are currently in active use.
+AODV is one of the most widely implemented routing protocols in MANET and WMN research
+and has been deployed in commercial products including Batman-Advanced and various IoT
+gateway platforms.
+
+\subsection{Route Discovery}
+
+When a source node $S$ needs to send data to destination $D$ and has no valid routing
+table entry for $D$, it broadcasts a Route Request (RREQ) message. The RREQ contains:
+
+\begin{itemize}
+  \item Source IP address and sequence number.
+  \item Destination IP address and the last-known destination sequence number.
+  \item Broadcast ID (incremented for each new RREQ from the source).
+  \item Hop count (initialised to 0, incremented by each forwarder).
+  \item Time-to-Live (TTL) field to limit flood scope.
+\end{itemize}
+
+Each intermediate node $M$ that receives the RREQ checks whether it has a valid,
+sufficiently fresh route to $D$ (i.e., one with a sequence number at least as large as
+the one in the RREQ). If so, $M$ generates a Route Reply (RREP) and sends it unicast
+back to $S$ along the reverse path. Otherwise, $M$ increments the hop count, records
+the reverse-path entry for $S$, and re-broadcasts the RREQ. Duplicate RREQ messages
+(identified by source address + broadcast ID) are discarded.
+
+The RREP travels back to $S$ along the reverse path established during the RREQ flood.
+Each intermediate node that forwards the RREP creates a forward route entry for $D$
+with the sequence number and hop count from the RREP. Once $S$ receives the RREP,
+it begins data transmission immediately. The entire process, from RREQ to first data
+packet, typically takes 2--4 round-trip times in a well-connected network.
+
+\subsection{Route Maintenance}
+
+Once a route is established, AODV uses two mechanisms to detect and respond to link
+failures:
+
+\paragraph{HELLO messages.}
+Nodes periodically broadcast short HELLO messages to their neighbours. If no HELLO is
+received from an active next-hop for a configurable interval, the link is assumed to have
+failed.
+
+\paragraph{Route Error (RERR).}
+When a node detects that a link to an active next-hop has failed (either through missing
+HELLOs or through a layer-2 notification from the MAC), it generates a Route Error
+(RERR) message listing all destinations that become unreachable as a result. The RERR
+is propagated upstream toward all sources using the broken route, which in turn may
+initiate new route discoveries.
+
+\subsection{Sequence Number Management}
+
+AODV uses destination sequence numbers to ensure loop-free routes and to allow
+comparisons between competing route options. Each destination node increments its own
+sequence number before initiating a route reply. A route with a higher destination
+sequence number is always preferred over one with a lower sequence number, regardless
+of hop count.
+
+\subsection{AODV Algorithm Summary}
+
+\begin{algorithm}[ht]
+\caption{AODV Route Discovery at Source Node}
+\begin{algorithmic}[1]
+\Procedure{SendData}{dest $D$, packet $P$}
+  \If{valid route to $D$ exists in table}
+    \State Forward $P$ to next-hop for $D$
+  \Else
+    \State Buffer $P$ in data queue
+    \State Increment own RREQ sequence counter
+    \State Broadcast $\text{RREQ}(\text{src}=S,\; \text{dest}=D,\; \text{hopCount}=0,\; \text{TTL}=\text{NET\_DIAMETER})$
+    \State Start route-discovery timer
+    \If{RREP received within timeout}
+      \State Install route from RREP
+      \State Flush buffered packets to $D$
+    \Else
+      \State Retry with expanded TTL (expanding ring search)
+      \If{still no RREP}
+        \State Drop buffered packets, notify application
+      \EndIf
+    \EndIf
+  \EndIf
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\section{IEEE~802.11 DCF and MAC Layer Contention}
+
+\subsection{Distributed Coordination Function (DCF)}
+
+The IEEE~802.11 Distributed Coordination Function (DCF) is the fundamental access
+control mechanism for WLANs and is the MAC protocol used in all nodes in this
+simulation. DCF implements CSMA/CA: before transmitting, a node senses the channel.
+If the channel is idle for a DCF Inter-Frame Space (DIFS) period, the node may
+transmit. If the channel is busy, the node enters a random back-off period to reduce
+the probability of collision.
+
+\subsection{Binary Exponential Back-off}
+
+The back-off duration is chosen uniformly at random from $[0, \text{CW})$ slots, where
+CW is the Contention Window. The back-off timer counts down only while the channel is
+idle; it is frozen when the channel becomes busy. After a collision (indicated by the
+absence of an ACK from the receiver within a SIFS + ACK timeout), the sender doubles
+the CW value:
+
+\begin{equation}
+  \text{CW}_{k+1} = \min\!\left(2 \cdot \text{CW}_k,\; \text{CW}_{\max}\right)
+  \label{eq:beb}
+\end{equation}
+
+This is the Binary Exponential Back-off (BEB) algorithm. For IEEE~802.11g in mixed
+mode:
+
+\begin{align*}
+  \text{CW}_{\min} &= 31 \text{ slots} \\
+  \text{CW}_{\max} &= 1023 \text{ slots} \\
+  \text{SIFS}       &= 10\;\mu\text{s} \\
+  \text{DIFS}       &= 28\;\mu\text{s} \\
+  \text{Slot time}  &= 9\;\mu\text{s}
+\end{align*}
+
+\subsection{Retry Limit and Frame Dropping}
+
+IEEE~802.11 imposes a maximum retry count on every frame transmission. For the
+802.11g standard (as configured in this simulation), the retry limit is 7~attempts. If
+the frame has not been acknowledged after 7~transmission attempts, the MAC layer drops
+the frame and generates a transmission failure notification to the upper layer. This is
+the mechanism responsible for the packet drops observed in DSDV at $N = 50$, as
+discussed in Section~\ref{sec:mac_evidence}.
+
+The probability of a frame reaching the retry limit is negligible at low load, but
+increases sharply as the offered load approaches the channel's saturation point.
+Bianchi's seminal model~\cite{bianchi2000} characterises the saturation throughput of
+802.11 DCF as:
+
+\begin{equation}
+  S = \frac{P_{tr} \cdot P_s \cdot E[L]}
+         {(1 - P_{tr})\sigma + P_{tr}P_s T_s + P_{tr}(1-P_s)T_c}
+  \label{eq:bianchi}
+\end{equation}
+
+where $P_{tr}$ is the probability that at least one node transmits in a slot, $P_s$ is
+the probability of a successful transmission given that at least one node transmits,
+$E[L]$ is the average payload size, $\sigma$ is the slot time, and $T_s$, $T_c$ are
+the average times consumed by successful and collision events, respectively.
+
+As the number of competing nodes $N$ increases, $P_{tr} \to 1$ and collisions dominate.
+This is why DSDV's periodic routing broadcasts --- which add additional contending nodes
+to the channel --- cause disproportionate performance degradation at $N = 50$ compared
+with AODV's on-demand traffic model.
+
+\section{Related Work}
+
+A substantial body of literature compares AODV and DSDV under various conditions.
+Das~et~al.~\cite{das2000performance} compared AODV and DSDV using the GloMoSim
+simulator and found that AODV outperforms DSDV in terms of packet delivery ratio under
+mobility, while DSDV achieves lower delay in static scenarios. Their work used
+random-waypoint mobility and did not analyse the IEEE~802.11 MAC-layer behaviour.
+
+Shukla and Mahajan~\cite{shukla2013performance} evaluated AODV, DSDV, and DSR in NS-2
+and reported that AODV provides the best packet delivery ratio in medium-density networks,
+while DSDV's routing overhead becomes problematic at higher densities. However, their
+traffic model used a random source-destination pairing rather than the many-to-one IoT
+pattern studied here.
+
+Boukerche~\cite{boukerche2004} studied MANET routing protocols under varying network
+sizes and traffic loads, finding a performance crossover between proactive and reactive
+protocols at a density that depends on the traffic load. He did not provide MAC-layer
+evidence for the observed crossover.
+
+Bianchi's model~\cite{bianchi2000} provides the theoretical foundation for understanding
+how the number of competing nodes affects IEEE~802.11 saturation throughput, and is used
+in Appendix~\ref{app:math} to contextualise the MAC-level observations in this thesis.
+
+Chatzimisios~et~al.~\cite{chatzimisios2003} studied the effect of the retry limit on
+IEEE~802.11 throughput under high load conditions, confirming that the 7-retry abort
+mechanism causes throughput collapse when the offered load exceeds the channel's
+saturation point.
+
+The contribution of this thesis relative to prior work is: (1) the use of a high-fidelity
+IEEE~802.11 MAC model in OMNeT++/INET~4.5 rather than simplified MAC models in older
+simulators; (2) the many-to-one traffic pattern representative of IoT data collection;
+and (3) the explicit extraction of MAC-layer contention statistics to provide a causal
+explanation of the observed performance differences.

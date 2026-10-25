@@ -1,0 +1,114 @@
+\documentclass[12pt, a4paper, oneside]{report}
+
+%% ─── PACKAGES ─────────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm]{geometry}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{acronym}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage[numbers,compress]{natbib}
+\usepackage{pdfpages}
+\usepackage{emptypage}
+\usepackage{url}
+
+%% ─── HYPERREF SETUP ───────────────────────────────────────────────────────
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    urlcolor=blue,
+    pdftitle={Evaluation of Wireless Mesh Network Routing Protocols: AODV vs. DSDV},
+    pdfauthor={Abdullah Mohammad Khair Ababneh},
+}
+
+%% ─── CODE LISTING STYLE ───────────────────────────────────────────────────
+\lstdefinestyle{omnetpp}{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red!70!black},
+    showstringspaces=false,
+    tabsize=2,
+}
+\lstset{style=omnetpp}
+
+%% ─── HEADER / FOOTER ─────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\nouppercase{\leftmark}}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+%% ─── LINE SPACING ─────────────────────────────────────────────────────────
+\onehalfspacing
+
+%% ─── CHAPTER TITLE FORMAT ─────────────────────────────────────────────────
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{50pt}{40pt}
+
+%% ══════════════════════════════════════════════════════════════════════════
+\begin{document}
+
+\pagenumbering{roman}
+
+%% Front matter
+\input{frontmatter/titlepage}
+\input{frontmatter/dedication}
+\input{frontmatter/acknowledgments}
+\input{frontmatter/abstract}
+
+%% Tables of contents / figures / tables
+\tableofcontents
+\listoffigures
+\listoftables
+
+%% Abbreviations
+\input{frontmatter/abbreviations}
+
+\cleardoublepage
+\pagenumbering{arabic}
+
+%% Chapters
+\input{chapters/ch1_introduction}
+\input{chapters/ch2_wmn_background}
+\input{chapters/ch3_routing_mac}
+\input{chapters/ch4_methodology}
+\input{chapters/ch5_results}
+\input{chapters/ch6_conclusion}
+
+%% Bibliography
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+%% Appendices
+\appendix
+\input{appendices/appA_config}
+\input{appendices/appB_math}
+
+\end{document}

@@ -1,0 +1,130 @@
+\chapter{Introduction}
+\label{ch:introduction}
+
+\section{Background and Motivation}
+
+The proliferation of connected devices in the Internet of Things (IoT) era has
+fundamentally changed the expectations placed on wireless networking infrastructure.
+Traditional access-point-centric wireless networks, where all communication is mediated
+through a fixed access point, struggle to scale gracefully to large numbers of devices
+distributed over wide areas. They create single points of failure, require expensive
+cabling infrastructure, and cannot self-organise or self-heal in the event of component
+failure.
+
+Wireless Mesh Networks (WMNs) address these limitations by distributing the routing
+and forwarding functions across all participating nodes. In a WMN, every device acts
+simultaneously as a data source, a relay, and --- when connected to the wired backbone
+--- a gateway. Packets traverse the network over multiple wireless hops, following paths
+computed by a dedicated routing protocol. This multi-hop architecture provides geographic
+coverage far beyond the reach of any single radio transmitter, allows the network to
+re-route around failed or congested links, and can be deployed rapidly without
+pre-existing infrastructure.
+
+The routing protocol is, consequently, the central design choice in any WMN deployment.
+It determines how routes are discovered and maintained, how much overhead is generated
+in control traffic, how quickly the network responds to topological changes, and how
+energy is consumed at each node. The two broad families of routing protocols that have
+been most widely studied are:
+
+\begin{itemize}
+  \item \textbf{Proactive (table-driven) protocols}, which continuously maintain routing
+    tables for all destinations, trading high control overhead for immediately-available routes.
+  \item \textbf{Reactive (on-demand) protocols}, which discover routes only when a
+    communication session requires one, trading an initial discovery delay for lower
+    steady-state control overhead.
+\end{itemize}
+
+The Destination-Sequenced Distance-Vector (DSDV) protocol~\cite{perkins1994dsdv} is the
+canonical proactive protocol, extending the classic Bellman-Ford algorithm with sequence
+numbers to eliminate routing loops. The Ad hoc On-Demand Distance Vector (AODV)
+protocol~\cite{perkins2003aodv}, standardised as RFC~3561, is the canonical reactive
+protocol and has been widely deployed in both research and production MANET and WMN systems.
+
+Despite extensive theoretical and simulation-based comparisons in the literature, many
+studies are conducted under idealised channel models, simplified traffic patterns, or
+without rigorous control of the MAC-layer parameters that determine how control and data
+traffic compete for the shared wireless medium. This gap motivates the present work: a
+carefully controlled simulation study using a high-fidelity IEEE~802.11 MAC and
+physical-layer model, a realistic many-to-one traffic pattern representative of IoT data
+collection, and a systematic sweep over network density that reveals the crossover
+behaviour between the two protocols.
+
+\section{Problem Statement}
+
+Selecting a routing protocol for a WMN deployment involves navigating a fundamental
+tension between two competing design objectives:
+
+\begin{enumerate}
+  \item \textbf{Route availability.} A node must have a valid route to the destination
+    before it can transmit data. In sparse networks, routes may not yet be available
+    (reactive protocols) or may have gone stale (proactive protocols with convergence lag).
+  \item \textbf{Channel efficiency.} The wireless medium is shared. Every byte of routing
+    control traffic consumes airtime that could otherwise carry application data. In dense
+    networks, proactive protocols that broadcast routing tables periodically can saturate
+    the medium, leading to MAC-layer congestion and cascading packet loss.
+\end{enumerate}
+
+The precise point at which the dominant bottleneck shifts from route availability to
+channel efficiency --- the \emph{crossover density} --- is a function of the specific
+protocol parameters, radio technology, traffic load, and network size. This crossover is
+poorly characterised in the existing literature for the specific combination of AODV,
+DSDV, IEEE~802.11g, and many-to-one IoT traffic patterns.
+
+Furthermore, most existing studies report only application-layer performance metrics
+(throughput, delay, packet delivery ratio) without tracing the physical mechanism
+responsible for observed performance degradation at the MAC layer. This makes it
+difficult for practitioners to reason about whether a performance problem is caused by
+sub-optimal routing logic or by low-level channel saturation --- an important distinction
+when diagnosing and tuning deployed systems.
+
+\section{Research Objectives}
+
+This thesis pursues four specific research objectives:
+
+\begin{enumerate}
+  \item \textbf{Quantify the crossover density.} Determine the value of $N$ at which
+    AODV begins to outperform DSDV across the five performance metrics studied:
+    throughput, packet count, end-to-end delay, energy consumption, and packet drop rate.
+  \item \textbf{Explain the crossover mechanism.} Trace the causal chain from routing
+    protocol behaviour, through MAC-layer contention, to observed application-layer
+    performance, providing quantitative evidence at each level.
+  \item \textbf{Provide MAC-layer evidence.} Extract and analyse contention-window
+    escalation statistics from the OMNeT++/INET simulation to demonstrate the
+    physical-layer mechanism responsible for DSDV's performance collapse at high densities.
+  \item \textbf{Derive deployment guidelines.} Translate the quantitative findings into
+    actionable engineering guidance for practitioners selecting between AODV and DSDV
+    for WMN deployments in IoT and other application domains.
+\end{enumerate}
+
+\section{Thesis Contributions}
+
+The principal contributions of this thesis are:
+
+\begin{itemize}
+  \item A fully reproducible OMNeT++~6.3 / INET~4.5 simulation setup for comparing
+    AODV and DSDV in a WMN context, with all configuration files provided in
+    Appendix~\ref{app:config}.
+  \item Empirical demonstration of the AODV/DSDV performance crossover at approximately
+    $N = 20$ nodes, with quantitative data for throughput, delay, energy, and drop rate
+    across all five tested densities.
+  \item MAC-layer evidence linking DSDV's performance degradation at $N = 50$ to
+    contention-window escalation and the 7-retry abort limit defined by the
+    IEEE~802.11 standard.
+  \item A comprehensive energy analysis showing AODV's 8\% energy advantage at high
+    densities and explaining the reversal at $N = 10$.
+  \item Protocol-selection guidelines for WMN practitioners, structured as a decision
+    matrix covering network size, latency requirements, reliability requirements, and
+    energy constraints.
+\end{itemize}
+
+\section{Thesis Structure}
+
+The remainder of this thesis is organised as follows. Chapter~\ref{ch:wmn} provides
+background on WMN architecture, characteristics, and applications. Chapter~\ref{ch:routing}
+reviews the theoretical foundations of proactive and reactive routing, describes the AODV
+and DSDV protocols in detail, and analyses the IEEE~802.11 DCF MAC layer.
+Chapter~\ref{ch:methodology} describes the simulation methodology, including the network
+model, parameter choices, and metric collection procedures. Chapter~\ref{ch:results}
+presents and analyses the simulation results, with particular attention to the trade-offs
+between the two protocols. Chapter~\ref{ch:conclusion} summarises the findings, provides
+deployment guidelines, and outlines directions for future work.

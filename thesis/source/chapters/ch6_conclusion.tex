@@ -1,0 +1,169 @@
+\chapter{Conclusion and Future Work}
+\label{ch:conclusion}
+
+\section{Conclusion}
+
+This thesis presented a systematic, simulation-based evaluation of two prominent routing
+protocols for Wireless Mesh Networks --- the reactive AODV (RFC~3561) and the proactive
+DSDV (Perkins \& Bhagwat~1994) --- using OMNeT++~6.3 and the INET~4.5 framework.
+Simulations were conducted across five network densities ($N \in \{10, 20, 30, 40, 50\}$
+nodes) in a $1000\,\text{m} \times 1000\,\text{m}$ area with IEEE~802.11g radio links
+and a many-to-one UDP traffic pattern representative of IoT data collection.
+
+The key conclusions are:
+
+\begin{enumerate}
+  \item \textbf{Performance crossover at approximately $N = 20$.} DSDV offers lower
+    end-to-end delay at $N = 10$ due to pre-populated routing tables, but AODV
+    outperforms DSDV on all five metrics (throughput, packet count, delay, energy, and
+    drop rate) at $N \geq 30$. The crossover is driven by a shift in the dominant
+    performance bottleneck from route availability (sparse) to channel capacity (dense).
+
+  \item \textbf{AODV delivers 35\% higher throughput at $N = 50$.} AODV achieves
+    $\approx 2.5$~MB of delivered data compared with $\approx 1.85$~MB for DSDV. The
+    difference is caused by DSDV's periodic routing broadcasts consuming channel airtime
+    that AODV reserves for application data.
+
+  \item \textbf{AODV achieves zero routing failures across all densities.} DSDV suffers
+    24--31 ``no route found'' drops at $N = 10$ (convergence lag) and 121+ queue-overflow
+    drops at $N = 50$ (MAC saturation). For reliability-critical IoT applications,
+    AODV's zero-drop record is a decisive advantage.
+
+  \item \textbf{MAC-layer evidence confirms congestion collapse at $N = 50$ for DSDV.}
+    Contention-window traces show CW escalating to 511--1023 slots, with repeated
+    7-retry aborts. This is direct physical evidence that DSDV's performance degradation
+    is not an algorithmic failure but a channel saturation effect triggered by the MAC
+    competition between routing broadcasts and data traffic.
+
+  \item \textbf{AODV is 8\% more energy-efficient at $N = 50$.} The energy advantage
+    arises from AODV's on-demand control traffic model, which keeps the radio in the
+    transmit and receive states less frequently than DSDV's periodic broadcasts. This
+    advantage is likely to be larger in longer operational scenarios.
+\end{enumerate}
+
+\section{Deployment Guidelines}
+
+Based on the simulation results, the following protocol-selection guidelines are
+recommended for WMN practitioners:
+
+\subsection{When to Choose DSDV}
+
+DSDV should be preferred when:
+
+\begin{itemize}
+  \item \textbf{Network size is small ($N < 20$ nodes).} Below the crossover density,
+    DSDV's pre-populated routes deliver substantially lower latency.
+  \item \textbf{Latency is the primary concern} and reliability can be sacrificed
+    occasionally. Home automation systems, hospital patient monitoring (where a missed
+    reading can be tolerated), and similar small-scale deployments fall into this category.
+  \item \textbf{Communication is frequent.} If every pair of nodes communicates
+    constantly, AODV's route-discovery overhead is amortised less effectively, and
+    DSDV's always-ready routes become an advantage.
+\end{itemize}
+
+\subsection{When to Choose AODV}
+
+AODV should be preferred when:
+
+\begin{itemize}
+  \item \textbf{Network size is large ($N > 20$ nodes).} Above the crossover, AODV's
+    on-demand control model prevents channel saturation.
+  \item \textbf{Reliability is critical.} Industrial IoT, smart grid metering, and
+    emergency communications cannot tolerate sustained packet-drop episodes. AODV's
+    zero-drop record makes it the safer choice.
+  \item \textbf{Energy efficiency matters.} Battery-powered sensor nodes on a WMN with
+    $N > 20$ will achieve longer operational lifetimes with AODV.
+  \item \textbf{Many-to-one traffic is the dominant pattern.} IoT data collection
+    scenarios create hot-spots near the sink. AODV's reactive mechanism naturally
+    concentrates routes near active paths, avoiding the broadcast overhead that saturates
+    the hot-spot region under DSDV.
+\end{itemize}
+
+\subsection{Decision Matrix}
+
+Table~\ref{tab:decision_matrix} provides a concise decision matrix for protocol selection.
+
+\begin{table}[ht]
+\centering
+\caption{Protocol selection decision matrix for WMN deployments.}
+\label{tab:decision_matrix}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Criterion} & \textbf{Prefer AODV} & \textbf{Prefer DSDV} \\
+\midrule
+Network size         & $N > 20$                      & $N < 20$ \\
+Primary requirement  & Throughput / reliability      & Low latency \\
+Traffic pattern      & Many-to-one, infrequent       & All-pairs, frequent \\
+Energy budget        & Constrained (battery)         & Unconstrained (mains) \\
+MAC protocol         & 802.11 (any)                  & Low-bitrate IoT radios \\
+Mobility             & Mobile nodes                  & Stationary / low-mobility \\
+Fault tolerance      & Critical (zero drops required)& Tolerant (occasional drops) \\
+Deployment example   & Smart city, industrial IoT    & Home automation, hospital \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Future Work}
+
+The following extensions would strengthen and broaden the conclusions of this thesis:
+
+\paragraph{Node mobility.}
+This study used stationary nodes. Introducing mobility (random waypoint, Gauss-Markov)
+would activate AODV's RERR/re-discovery mechanism and DSDV's rapid-update response,
+potentially shifting the crossover density.
+
+\paragraph{Additional protocols.}
+Including OLSR~\cite{clausen2003olsr} (which uses multipoint relays to reduce broadcast
+flooding overhead compared with DSDV) and HWMP (the protocol mandated by IEEE~802.11s
+for standardised mesh networking) would provide a more comprehensive comparison.
+
+\paragraph{Heterogeneous traffic.}
+The current study uses a single CBR source pattern. Real IoT deployments mix periodic
+sensor readings with event-driven alarm messages and multimedia streams. Evaluating AODV
+and DSDV under mixed traffic classes, including TCP flows with congestion control, would
+provide more practically relevant results.
+
+\paragraph{Energy-aware routing.}
+Routing decisions could incorporate residual energy as a metric, preferring paths through
+nodes with higher remaining battery capacity. This would extend network lifetime and
+distribute the energy burden more evenly. Such a mechanism is straightforward to
+implement in INET by modifying the routing metric computation.
+
+\paragraph{Variable MAC parameters.}
+The retry limit, $\text{CW}_{\min}$, and $\text{CW}_{\max}$ significantly affect the
+crossover density. A parametric study varying these values would characterise the
+sensitivity of the crossover to MAC configuration.
+
+\paragraph{Physical hardware validation.}
+Simulation results should be validated on a physical testbed (e.g., Raspberry Pi~4
+nodes running OpenWRT with batman-adv or babeld) to account for real-world effects
+including RF interference, multi-path fading, asymmetric link quality, and CPU
+scheduling latency.
+
+\paragraph{Security analysis.}
+WMN routing protocols are vulnerable to attacks including black-hole attacks (a malicious
+node advertises routes to attract traffic and then drops it), wormhole attacks, and Sybil
+attacks. Extending the evaluation to include adversarial node behaviour would add
+critical practical relevance, particularly for the IoT security domain.
+
+\section{Final Remarks}
+
+This project demonstrated that simulation is an effective and reproducible method for
+evaluating the trade-offs between routing protocols in Wireless Mesh Networks. The
+OMNeT++/INET platform provided a high-fidelity model of the IEEE~802.11 MAC and
+physical layers, yielding results that closely reflect the mechanisms observed in
+real-world 802.11 networks.
+
+The central finding --- that the dominant performance bottleneck shifts from route
+availability to channel capacity as network density increases --- is not specific to
+AODV and DSDV. It is a general principle that applies to any comparison between reactive
+and proactive routing protocols in any wireless network that uses a shared-medium MAC
+protocol. This principle should guide protocol designers and network engineers alike:
+the best routing protocol is the one whose control overhead is best matched to the
+channel capacity available at the target deployment density.
+
+Wireless Mesh Networks continue to play a growing role in smart city infrastructure,
+industrial automation, agricultural monitoring, and emergency communications. As
+deployments grow larger and energy constraints become more stringent, the quantitative
+understanding provided by studies such as this one becomes increasingly important for
+making informed protocol-selection decisions.
