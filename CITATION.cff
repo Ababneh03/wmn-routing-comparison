@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "Please cite the associated publication when discussing the research, and identify this repository's later baseline check separately."
+title: "Wireless Mesh Routing: AODV vs. DSDV — Recovered Baseline"
+type: software
+authors:
+  - family-names: Ababneh
+    given-names: Abdullah
+preferred-citation:
+  type: conference-paper
+  title: "Comparative Scalability Analysis of AODV and DSDV Routing in Dense Wireless Mesh Networks"
+  authors:
+    - family-names: Khalifeh
+      given-names: Ala
+    - family-names: Ababneh
+      given-names: Abdullah
+    - family-names: Ioannou
+      given-names: Iacovos
+  year: 2026
+  collection-title: "2026 IEEE Jordan Conference on Applied Electrical Engineering and Computing Technologies (AEECT)"
+  doi: "10.1109/AEECT69724.2026.11657843"

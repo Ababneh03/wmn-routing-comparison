@@ -1,0 +1,3 @@
+# Only figure generation needs an external Python package.
+# The runner, scalar analysis, and reference checks use the standard library.
+matplotlib==3.10.8

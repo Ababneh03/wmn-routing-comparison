@@ -1,0 +1,22 @@
+{
+  "checked_on": "2026-10-25",
+  "completed_simulated_seconds": 50,
+  "reference_metrics_match": [
+    "destination_received_packets",
+    "destination_received_bytes",
+    "destination_sent_packets",
+    "received_packet_lifetime_mean_s",
+    "received_packet_lifetime_count",
+    "destination_app_type",
+    "medium_type"
+  ],
+  "source_files_unchanged_sha256": {
+    "MeshNetwork.ned": "26296f623fd377035f04fcf46e71adcc19f7092c0c13c8eb302265e3d136aa4a",
+    "omnetpp.ini": "1db658328981ec64642ddb1f6262e2407a5523352d3a5a82e1a3069118eb44b5"
+  },
+  "scope": "Local installed simulator; clean upstream dependency compatibility not established.",
+  "standalone_scenarios": [
+    "AODV, 10 nodes, repetition 0",
+    "DSDV, 10 nodes, repetition 0"
+  ]
+}

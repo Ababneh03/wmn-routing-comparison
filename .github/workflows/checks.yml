@@ -1,0 +1,16 @@
+name: Project checks
+on: [push, pull_request]
+jobs:
+  reference-and-tooling:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - run: python -m compileall -q scripts
+      - run: bash -n scripts/run.sh
+      - run: python scripts/check_reference.py
+      - run: python scripts/plot_results.py --input results/reference/summary.json --output figures/generated
+      # Simulator execution requires a separately installed and compiled OMNeT++/INET environment.
